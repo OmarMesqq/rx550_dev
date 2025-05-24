@@ -10,7 +10,7 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-COPY square.c .
+COPY square.c square.cl .
 
 RUN gcc square.c -o square -lOpenCL
 

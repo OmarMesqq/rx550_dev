@@ -1,13 +1,27 @@
 #include <CL/cl.h>
 #include <stdio.h>
 
-const char *kernel_src =
-"__kernel void square(__global float* in, __global float* out) {\n"
-"   int i = get_global_id(0);\n"
-"   out[i] = in[i] * in[i];\n"
-"}\n";
-
 int main() {
+    FILE* f = fopen("square.cl", "r");
+    if (!f) {
+        printf("Failed to read kernel.\n");
+        return -1;
+    }
+    // Read all kernel source code to get its size, then rewind it for later copy
+    fseek(f, 0, SEEK_END);
+    size_t size = ftell(f);
+    rewind(f);
+
+    char* kernel_src = malloc(size + 1);
+    if (!kernel_src) {
+        printf("Failed to allocate heap memory for kernel code.\n");
+        return -1;
+    }
+    // Copy contents from kernel source code to memory
+    fread(kernel_src, 1, size, f);
+    kernel_src[size] = '\0';
+    fclose(f);
+
     float data[4] = {1.0, 2.0, 3.0, 4.0}, out[4];
     cl_platform_id pid; cl_device_id did; cl_context ctx;
     cl_program prog; cl_kernel kern;
@@ -20,7 +34,7 @@ int main() {
     CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE,
         0
     };
-    
+
     cl_command_queue q = clCreateCommandQueueWithProperties(ctx, did, props, NULL);
 
 
@@ -49,4 +63,5 @@ int main() {
     }
 
     printf("GPU time (ns): %lu\n", end - start);
+    free(kernel_src);
 }
